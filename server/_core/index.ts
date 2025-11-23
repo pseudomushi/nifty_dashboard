@@ -2,9 +2,13 @@ import "dotenv/config";
 
 // Use production server in Vercel/production, development server locally
 if (process.env.NODE_ENV === "production") {
-  // Import and run production server
-  import("./production.js").catch(console.error);
+  import("./production.js").catch(err => {
+    console.error("Failed to load production server:", err);
+    process.exit(1);
+  });
 } else {
-  // Import and run development server with Vite HMR
-  import("./development.js").catch(console.error);
+  import("./development.js").catch(err => {
+    console.error("Failed to load development server:", err);
+    process.exit(1);
+  });
 }

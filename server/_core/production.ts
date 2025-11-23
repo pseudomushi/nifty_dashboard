@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import fs from "fs";
 
 async function startServer() {
   const app = express();
@@ -27,19 +28,39 @@ async function startServer() {
     })
   );
 
-  // Serve static files from dist/public
-  // In Vercel, files are bundled and available at ./public relative to the server
-  const publicPath = path.join(process.cwd(), "dist", "public");
-  app.use(express.static(publicPath));
+  // Serve static files - try multiple possible paths for Vercel
+  const possiblePaths = [
+    path.join(process.cwd(), "dist", "public"),           // Standard build output
+    path.join(process.cwd(), "public"),                    // Vercel root public
+    path.join(__dirname, "..", "..", "dist", "public"),   // Relative from bundled location
+  ];
+
+  let publicPath = possiblePaths[0];
+  for (const possiblePath of possiblePaths) {
+    if (fs.existsSync(possiblePath)) {
+      publicPath = possiblePath;
+      console.log(`Using public path: ${publicPath}`);
+      break;
+    }
+  }
+
+  console.log(`Static files path (checking): ${publicPath}`);
+  console.log(`Files exist: ${fs.existsSync(publicPath)}`);
+
+  app.use(express.static(publicPath, { 
+    maxAge: "1d",
+    etag: false 
+  }));
 
   // SPA fallback - serve index.html for all non-API routes
   app.get("*", (req, res) => {
-    res.sendFile(path.join(publicPath, "index.html"), (err) => {
-      if (err) {
-        console.error("Error serving index.html:", err);
-        res.status(500).send("Error loading application");
-      }
-    });
+    const indexPath = path.join(publicPath, "index.html");
+    if (!fs.existsSync(indexPath)) {
+      console.error(`index.html not found at ${indexPath}`);
+      res.status(500).send(`Static files not found. Looking in: ${publicPath}`);
+      return;
+    }
+    res.sendFile(indexPath);
   });
 
   const port = process.env.PORT || "3000";
