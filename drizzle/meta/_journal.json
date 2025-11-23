@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1763797533960,
+      "tag": "0000_free_johnny_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1763798036484,
+      "tag": "0001_rapid_blizzard",
+      "breakpoints": true
+    }
+  ]
+}
