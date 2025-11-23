@@ -1,12 +1,21 @@
-import "dotenv/config";
-import express from "express";
-import { registerOAuthRoutes } from "../server/_core/oauth";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const app = express();
+/**
+ * OAuth endpoint placeholder
+ * TODO: Implement OAuth flow in serverless environment
+ */
+export default async (req: VercelRequest, res: VercelResponse) => {
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,POST");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-app.use(express.json());
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
 
-// OAuth routes
-registerOAuthRoutes(app);
-
-export default app;
+  res.status(501).json({
+    error: "OAuth not yet configured in serverless environment",
+  });
+};
