@@ -1,8 +1,4 @@
 {
   "buildCommand": "pnpm build",
-  "installCommand": "pnpm install",
-  "startCommand": "pnpm start",
-  "env": [
-    "NODE_ENV=production"
-  ]
+  "installCommand": "pnpm install"
 }
