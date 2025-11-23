@@ -48,20 +48,31 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath =
-    process.env.NODE_ENV === "development"
-      ? path.resolve(import.meta.dirname, "../..", "dist", "public")
-      : path.resolve(import.meta.dirname, "public");
+  // In production, files are in dist/public relative to root
+  // When bundled with esbuild, __dirname refers to dist/ directory
+  const distPath = path.resolve(
+    process.env.NODE_ENV === "production"
+      ? process.cwd() + "/dist/public"
+      : process.cwd() + "/dist/public"
+  );
+
   if (!fs.existsSync(distPath)) {
     console.error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
+      `Could not find the build directory: ${distPath}, make sure to run 'pnpm build' first`
     );
+    console.error(`Current working directory: ${process.cwd()}`);
   }
 
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
+  // fall through to index.html if the file doesn't exist (for client-side routing)
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    const indexPath = path.resolve(distPath, "index.html");
+    if (!fs.existsSync(indexPath)) {
+      console.error(`index.html not found at ${indexPath}`);
+      res.status(500).send("Build files not found. Please ensure 'pnpm build' has been run.");
+      return;
+    }
+    res.sendFile(indexPath);
   });
 }
