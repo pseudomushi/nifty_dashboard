@@ -52,26 +52,51 @@ app.use("/api/oauth", async (req, res, next) => {
 });
 
 // Determine static files directory
+// In Vercel, the working directory is the project root
 const staticDirs = [
-  path.join(process.cwd(), "dist", "public"),
-  path.join(process.cwd(), ".vercel", "output", "static"),
-  path.join(__dirname, "..", "dist", "public"),
+  path.join(process.cwd(), "dist", "public"),           // Standard: project/dist/public
+  path.join(process.cwd(), ".vercel", "output", "static"), // Vercel static output
+  path.join(__dirname, "..", "dist", "public"),         // Relative from server/start.ts
 ];
 
 let staticDir = null;
+let foundIndexHtml = false;
+
 for (const dir of staticDirs) {
-  if (fs.existsSync(dir) && fs.existsSync(path.join(dir, "index.html"))) {
+  const indexPath = path.join(dir, "index.html");
+  const exists = fs.existsSync(indexPath);
+  console.log(`[PATH CHECK] ${dir} → index.html exists: ${exists}`);
+  
+  if (exists) {
     staticDir = dir;
-    console.log(`✓ Found static files at: ${dir}`);
+    foundIndexHtml = true;
+    console.log(`✓ Using static files at: ${staticDir}`);
     break;
   }
 }
 
-if (!staticDir) {
-  console.error("✗ Static files (dist/public) not found!");
-  console.error("  Searched in:", staticDirs);
-  console.error("  Current directory:", process.cwd());
-  staticDir = path.join(process.cwd(), "dist", "public");
+if (!foundIndexHtml) {
+  console.error("✗ index.html not found in any expected location!");
+  console.error("  Checked paths:", staticDirs);
+  console.error("  Current directory: " + process.cwd());
+  
+  // List what's actually in the current directory
+  try {
+    console.error("  Contents of cwd:", fs.readdirSync(process.cwd()));
+    const distPath = path.join(process.cwd(), "dist");
+    if (fs.existsSync(distPath)) {
+      console.error("  Contents of dist/:", fs.readdirSync(distPath));
+      const publicPath = path.join(distPath, "public");
+      if (fs.existsSync(publicPath)) {
+        console.error("  Contents of dist/public/:", fs.readdirSync(publicPath).slice(0, 10));
+      }
+    }
+  } catch (e) {
+    console.error("  Error listing directories:", e);
+  }
+  
+  // Fall back to first path
+  staticDir = staticDirs[0];
 }
 
 // Serve static files
